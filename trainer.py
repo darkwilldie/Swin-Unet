@@ -42,14 +42,14 @@ def trainer_synapse(args, model, snapshot_path):
     model.train()
     ce_loss = CrossEntropyLoss()
     dice_loss = DiceLoss(num_classes)
-    # tvmf loss #
-    tvmf_loss = Adaptive_tvMF_DiceLoss(num_classes)
+    # # tvmf loss #
+    # tvmf_loss = Adaptive_tvMF_DiceLoss(num_classes)
 
-    # device #
-    device = torch.device('cuda:{}'.format(args.n_gpu - 1) if torch.cuda.is_available() else 'cpu')
+    # # device #
+    # device = torch.device('cuda:{}'.format(args.n_gpu - 1) if torch.cuda.is_available() else 'cpu')
 
-    # set kappa #
-    kappa = torch.Tensor(np.zeros((num_classes))).cuda(device)
+    # # set kappa #
+    # kappa = torch.Tensor(np.zeros((num_classes))).cuda(device)
 
     optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
     writer = SummaryWriter(snapshot_path + '/log')
@@ -66,9 +66,9 @@ def trainer_synapse(args, model, snapshot_path):
             outputs = model(image_batch)
             loss_ce = ce_loss(outputs, label_batch[:].long())
             loss_dice = dice_loss(outputs, label_batch, softmax=True)
-            loss_tvmf = tvmf_loss(outputs, label_batch, softmax=True, kappa=kappa)
-            # loss = 0.4 * loss_ce + 0.6 * loss_dice
-            loss = loss_tvmf
+            # loss_tvmf = tvmf_loss(outputs, label_batch, softmax=True, kappa=kappa)
+            loss = 0.4 * loss_ce + 0.6 * loss_dice
+            # loss = loss_tvmf
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
