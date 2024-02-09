@@ -27,7 +27,7 @@ fi
 if [ -n "$learning_rate" ]; then
     LEARNING_RATE=$learning_rate
 else
-    LEARNING_RATE=0.05
+    LEARNING_RATE=0.0001
 fi
 
 if [ -n "$img_size" ]; then

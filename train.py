@@ -6,12 +6,15 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from networks.vision_transformer import SwinUnet as ViT_seg
-from trainer import trainer_synapse
+from trainer import trainer_synapse, trainer_ACDC
 from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='../data/Synapse/train_npz', help='root dir for data')
+                    default='../data/Synapse', help='root dir for data')
+parser.add_argument("--volume_path", help='path/to/dataset/ACDC/test')
+parser.add_argument('--n_skip', type=int, default=1, help='using number of skip-connect, default is num')
+parser.add_argument("--z_spacing", default=10)
 parser.add_argument('--dataset', type=str,
                     default='Synapse', help='experiment_name')
 parser.add_argument('--list_dir', type=str,
@@ -57,7 +60,7 @@ parser.add_argument('--eval', action='store_true', help='Perform evaluation only
 parser.add_argument('--throughput', action='store_true', help='Test throughput only')
 
 args = parser.parse_args()
-if args.dataset == "Synapse" or args.dataset == "ACDC":
+if args.dataset == "Synapse":
     args.root_path = os.path.join(args.root_path, "train_npz")
 config = get_config(args)
 
@@ -100,5 +103,5 @@ if __name__ == "__main__":
     net = ViT_seg(config, img_size=args.img_size, num_classes=args.num_classes).cuda()
     net.load_from(config)
 
-    trainer = {'Synapse': trainer_synapse, 'ACDC': trainer_synapse}
+    trainer = {'Synapse': trainer_synapse, 'ACDC': trainer_ACDC}
     trainer[dataset_name](args, net, args.output_dir)
