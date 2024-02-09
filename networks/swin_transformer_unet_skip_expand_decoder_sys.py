@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from einops import rearrange
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-# from networks.as_mlp import AxialShiftedBlock
 from networks.shift_cuda import Shift
 
 def MyNorm(dim):
@@ -50,22 +49,6 @@ class AxialShift(nn.Module):
         x = self.norm1(x)
         x = self.actn(x)
        
-        '''
-        x = F.pad(x, (self.pad, self.pad, self.pad, self.pad) , "constant", 0)
-        
-        xs = torch.chunk(x, self.shift_size, 1)
-
-        def shift(dim):
-            x_shift = [ torch.roll(x_c, shift, dim) for x_c, shift in zip(xs, range(-self.pad, self.pad+1))]
-            x_cat = torch.cat(x_shift, 1)
-            x_cat = torch.narrow(x_cat, 2, self.pad, H)
-            x_cat = torch.narrow(x_cat, 3, self.pad, W)
-            return x_cat
-
-        x_shift_lr = shift(3)
-        x_shift_td = shift(2)
-        '''
-        
         x_shift_lr = self.shift_dim3(x)
         x_shift_td = self.shift_dim2(x)
         
