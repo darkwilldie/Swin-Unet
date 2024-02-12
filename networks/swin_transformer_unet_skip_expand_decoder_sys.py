@@ -185,7 +185,7 @@ class BasicLayer_mlp(nn.Module):
         # build blocks
         self.blocks = nn.ModuleList([
             AxialShiftedBlock(dim=dim, input_resolution=input_resolution,
-                              shift_size=shift_size,
+                              shift_size=0 if (i % 2 == 0) else shift_size,
                               mlp_ratio=mlp_ratio,
                               as_bias=as_bias,
                               drop=drop, 
@@ -776,6 +776,8 @@ class PatchEmbed(nn.Module):
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
         
+        x = self.proj(x).flatten(2).transpose(1, 2)  # B Ph*Pw C
+
         if self.norm is not None:
             x = self.norm(x)
         return x
