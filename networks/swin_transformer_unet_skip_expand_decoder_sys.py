@@ -185,7 +185,7 @@ class BasicLayer_mlp(nn.Module):
         # build blocks
         self.blocks = nn.ModuleList([
             AxialShiftedBlock(dim=dim, input_resolution=input_resolution,
-                              shift_size=0 if (i % 2 == 0) else shift_size,
+                              shift_size=shift_size,
                               mlp_ratio=mlp_ratio,
                               as_bias=as_bias,
                               drop=drop, 
@@ -207,7 +207,7 @@ class BasicLayer_mlp(nn.Module):
                 x = blk(x)
         if self.downsample is not None:
             x = self.downsample(x)
-        return x
+        return x.flatten(2).transpose(1, 2)
 
     def extra_repr(self) -> str:
         return f"dim={self.dim}, input_resolution={self.input_resolution}, depth={self.depth}"
@@ -856,6 +856,16 @@ class SwinTransformerSys(nn.Module):
         # stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
 
+        # build average pooling layers for original image
+        self.avgpool = nn.AvgPool2d(kernel_size=2, stride=2, padding=0)
+
+        # build channels adjusting layers for original image
+        self.channels_adjust = nn.ModuleList()
+        for i_layer in range(self.num_layers - 1):
+            channels_adjust = nn.Conv2d(in_channels=(embed_dim * 2 ** i_layer), out_channels=int(embed_dim * 2 ** (i_layer + 1)), kernel_size=3, stride=1, padding="same", bias=False)
+            self.channels_adjust.append(channels_adjust)
+
+
         # build encoder and bottleneck layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
@@ -954,13 +964,29 @@ class SwinTransformerSys(nn.Module):
         x = self.pos_drop(x)
         x_downsample = []
         x_axialShifted = []
+        x_original = x.clone()
 
         for inx, (layer, layer_as_mlp) in enumerate(zip(self.layers, self.layers_as_mlp)):
+
+            if inx < self.num_layers - 1:
+                # print("\n\nx.shape:{}\n\n".format(x.shape))
+                # print("\n\nx_original.shape:{}\n\n".format(x_original.shape))
+
+                x = x + x_original
+                
+
+                x_original = x_original.view(x.shape[0], self.patches_resolution[0] // (2 ** inx), self.patches_resolution[1] // (2 ** inx), self.embed_dim * (2 ** inx)).permute(0, 3, 1, 2) # B C H W
+                x_original = self.channels_adjust[inx](x_original)
+                x_original = self.avgpool(x_original)
+                x_original = x_original.permute(0, 2, 3, 1).view(x.shape[0], -1, self.embed_dim * 2 ** (inx + 1))  # B L C
+
+            # exit()
+
             shortcut = x.clone()
             shortcut = shortcut.view(x.shape[0], self.patches_resolution[0] // (2 ** inx), self.patches_resolution[1] // (2 ** inx), self.embed_dim * (2 ** inx)).permute(0, 3, 1, 2)
-            shortcut = layer_as_mlp(shortcut).flatten(2).transpose(1, 2)
-            x_axialShifted.append(shortcut)
+            shortcut = layer_as_mlp(shortcut)
 
+            x_axialShifted.append(shortcut)
             x_downsample.append(x)
             x = layer(x)
 
