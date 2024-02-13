@@ -53,8 +53,8 @@ def trainer_synapse(args, model, snapshot_path):
     # # set kappa #
     # kappa = torch.Tensor(np.zeros((num_classes))).cuda(device)
 
-    # optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
-    optimizer = optim.Adam(model.parameters(), lr=base_lr, weight_decay=0.0001)
+    optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
+    # optimizer = optim.Adam(model.parameters(), lr=base_lr, weight_decay=0.0001)
     writer = SummaryWriter(snapshot_path + '/log')
     iter_num = 0
     max_epoch = args.max_epochs
@@ -70,7 +70,7 @@ def trainer_synapse(args, model, snapshot_path):
             loss_ce = ce_loss(outputs, label_batch[:].long())
             loss_dice = dice_loss(outputs, label_batch, softmax=True)
             # loss_tvmf = tvmf_loss(outputs, label_batch, softmax=True, kappa=kappa)
-            loss = 0.5 * loss_ce + 0.5 * loss_dice
+            loss = 0.4 * loss_ce + 0.6 * loss_dice
             # loss = loss_tvmf
             optimizer.zero_grad()
             loss.backward()
@@ -222,7 +222,7 @@ def trainer_ACDC(args, model, snapshot_path):
             avg_dcs = val()
             
             if avg_dcs > Best_dcs:
-                save_mode_path = os.path.join(snapshot_path, 'epoch={}_lr={:.4f}_avg_dcs={:.4f}_avg_hd={:.4f}.pth'.format(epoch_num, lr_, avg_dcs, avg_hd))
+                save_mode_path = os.path.join(snapshot_path, 'epoch={}_avg_dcs={:.4f}_avg_hd={:.4f}.pth'.format(epoch_num, avg_dcs, avg_hd))
                 torch.save(model.state_dict(), save_mode_path)
                 logging.info("save model to {}".format(save_mode_path))
                 #temp = 1

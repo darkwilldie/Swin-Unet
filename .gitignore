@@ -9,4 +9,4 @@ __pycache__/
 *.pth
 *.npz
 events.out.*
-
+model_out/log.txt

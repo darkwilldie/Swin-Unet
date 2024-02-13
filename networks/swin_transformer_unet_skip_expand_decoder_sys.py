@@ -24,10 +24,14 @@ class AxialShift(nn.Module):
         self.dim = dim
         self.shift_size = shift_size
         self.pad = shift_size // 2
-        self.conv1 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
-        self.conv2_1 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
-        self.conv2_2 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
-        self.conv3 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
+        # self.conv1 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
+        # self.conv2_1 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
+        # self.conv2_2 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
+        # self.conv3 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
+        self.conv1 = nn.Conv2d(dim, dim, 1, 1, padding="same", groups=1, bias=as_bias)
+        self.conv2_1 = nn.Conv2d(dim, dim, 3, 1, padding="same", groups=1, bias=as_bias)
+        self.conv2_2 = nn.Conv2d(dim, dim, 3, 1, padding="same", groups=1, bias=as_bias)
+        self.conv3 = nn.Conv2d(dim, dim, 1, 1, padding="same", groups=1, bias=as_bias)
 
         self.actn = nn.GELU()
 
@@ -185,7 +189,7 @@ class BasicLayer_mlp(nn.Module):
         # build blocks
         self.blocks = nn.ModuleList([
             AxialShiftedBlock(dim=dim, input_resolution=input_resolution,
-                              shift_size=0 if (i % 2 == 0) else shift_size,
+                              shift_size=shift_size,
                               mlp_ratio=mlp_ratio,
                               as_bias=as_bias,
                               drop=drop, 
