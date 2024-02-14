@@ -116,7 +116,7 @@ class AxialShiftedBlock(nn.Module):
 
         self.norm1 = norm_layer(dim)
         self.axial_shift_1 = AxialShift(dim, shift_size=shift_size, as_bias=as_bias, proj_drop=drop)
-        self.axial_shift_2 = AxialShift(dim, shift_size=shift_size, as_bias=as_bias, proj_drop=drop, conv_kernel=5)
+        self.axial_shift_2 = AxialShift(dim, shift_size=shift_size, as_bias=as_bias, proj_drop=drop, conv_kernel=1)
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
