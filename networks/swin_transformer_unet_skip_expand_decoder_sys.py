@@ -18,7 +18,7 @@ class AxialShift(nn.Module):
         proj_drop (float, optional): Dropout ratio of output. Default: 0.0
     """
 
-    def __init__(self, dim, shift_size, as_bias=True, proj_drop=0.):
+    def __init__(self, dim, shift_size, as_bias=True, proj_drop=0., conv_kernel=3):
 
         super().__init__()
         self.dim = dim
@@ -29,8 +29,8 @@ class AxialShift(nn.Module):
         # self.conv2_2 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
         # self.conv3 = nn.Conv2d(dim, dim, 1, 1, 0, groups=1, bias=as_bias)
         self.conv1 = nn.Conv2d(dim, dim, 1, 1, padding="same", groups=1, bias=as_bias)
-        self.conv2_1 = nn.Conv2d(dim, dim, 3, 1, padding="same", groups=1, bias=as_bias)
-        self.conv2_2 = nn.Conv2d(dim, dim, 3, 1, padding="same", groups=1, bias=as_bias)
+        self.conv2_1 = nn.Conv2d(dim, dim, conv_kernel, 1, padding="same", groups=1, bias=as_bias)
+        self.conv2_2 = nn.Conv2d(dim, dim, conv_kernel, 1, padding="same", groups=1, bias=as_bias)
         self.conv3 = nn.Conv2d(dim, dim, 1, 1, padding="same", groups=1, bias=as_bias)
 
         self.actn = nn.GELU()
@@ -95,7 +95,7 @@ class AxialShiftedBlock(nn.Module):
 
     Args:
         dim (int): Number of input channels.
-        input_resolution (tuple[int]): Input resulotion.
+        input_resolution (tuple[int]): Input resolution.
         shift_size (int): Shift size.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
         as_bias (bool, optional): If True, add a learnable bias to Axial Mlp. Default: True
@@ -115,7 +115,8 @@ class AxialShiftedBlock(nn.Module):
         self.mlp_ratio = mlp_ratio
 
         self.norm1 = norm_layer(dim)
-        self.axial_shift = AxialShift(dim, shift_size=shift_size, as_bias=as_bias, proj_drop=drop)
+        self.axial_shift_1 = AxialShift(dim, shift_size=shift_size, as_bias=as_bias, proj_drop=drop)
+        self.axial_shift_2 = AxialShift(dim, shift_size=shift_size, as_bias=as_bias, proj_drop=drop, conv_kernel=5)
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -127,9 +128,13 @@ class AxialShiftedBlock(nn.Module):
 
         shortcut = x
         x = self.norm1(x)
+        y = x.clone()
 
         # axial shift block
-        x = self.axial_shift(x)  # B, C, H, W
+        x = self.axial_shift_1(x)  # B, C, H, W
+        y = self.axial_shift_2(y)  # B, C, H, W
+
+        x = x + y
 
         # FFN
         x = shortcut + self.drop_path(x)
