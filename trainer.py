@@ -164,7 +164,7 @@ def trainer_ACDC(args, model, snapshot_path):
     Loss = []
     Test_Accuracy = []
 
-    Best_dcs = 0.82
+    Best_dcs = 0.83
     logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s   %(levelname)s   %(message)s')
 
@@ -221,7 +221,7 @@ def trainer_ACDC(args, model, snapshot_path):
         if (epoch_num + 1) % save_interval == 0:
             avg_dcs = val()
             
-            if avg_dcs > Best_dcs:
+            if avg_dcs > Best_dcs or avg_dcs > 0.84:
                 save_mode_path = os.path.join(snapshot_path, 'epoch={}_avg_dcs={:.4f}_avg_hd={:.4f}.pth'.format(epoch_num, avg_dcs, avg_hd))
                 torch.save(model.state_dict(), save_mode_path)
                 logging.info("save model to {}".format(save_mode_path))
