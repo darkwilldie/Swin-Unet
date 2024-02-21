@@ -53,7 +53,6 @@ class AxialShift(nn.Module):
         x = self.conv1(x)
         x = self.norm1(x)
         x = self.actn(x)
-        shortcut = x.clone()
        
         x_shift_lr = self.shift_dim3(x)
         x_shift_td = self.shift_dim2(x)
@@ -68,9 +67,6 @@ class AxialShift(nn.Module):
 
         x = self.norm2(x)
         x = self.conv3(x)
-
-        x = x + shortcut
-        x = self.actn(x)
 
         return x
 
